@@ -2,7 +2,7 @@ use log::{debug, error, info};
 use std::env;
 
 struct Settings {
-    debug: bool,
+    log_level: log::Level,
     input_file: Option<String>,
 }
 
@@ -12,18 +12,14 @@ fn main() {
     let result = process_command_line(env::args().collect());
     match result {
         Ok(settings) => {
-            if settings.debug {
-                initialize_logging(log::Level::Debug);
-            } else {
-                initialize_logging(log::Level::Info);
-            }
+            initialize_logging(settings.log_level);
 
             info!("Settings parsed successfully");
-            debug!("Debug is set to {}", settings.debug);
+            debug!("Logging is set to {:?}", settings.log_level);
             debug!("Input is set to {:?}", settings.input_file);
         }
         Err(message) => {
-            initialize_logging(log::Level::Error);
+            initialize_logging(log::Level::Info);
             error!("Error parsing settings: {}", message)
         }
     }
@@ -47,7 +43,7 @@ fn process_command_line(args: Vec<String>) -> Result<Settings, &'static str> {
     let mut index = 1;
 
     let mut settings = Settings {
-        debug: false,
+        log_level: log::Level::Info,
         input_file: None,
     };
 
@@ -56,7 +52,9 @@ fn process_command_line(args: Vec<String>) -> Result<Settings, &'static str> {
         debug!("  {}", args[index]);
 
         if args[index] == "--debug" || args[index] == "-d" {
-            settings.debug = true;
+            settings.log_level = log::Level::Debug;
+        } else if args[index] == "--quiet" || args[index] == "-q" {
+            settings.log_level = log::Level::Warn;
         } else if args[index] == "--input" || args[index] == "-i" {
             if index + 1 < args.len() {
                 index += 1;
