@@ -1,3 +1,4 @@
+use log::{debug, error, info};
 use std::env;
 
 struct Settings {
@@ -8,12 +9,32 @@ struct Settings {
 fn main() {
     display_details();
 
-    let mut settings = Settings { debug: false, input_file: None };
+    let result = process_command_line(env::args().collect());
+    match result {
+        Ok(settings) => {
+            if settings.debug {
+                initialize_logging(log::Level::Debug);
+            } else {
+                initialize_logging(log::Level::Info);
+            }
 
-    process_command_line(env::args().collect(), &mut settings);
+            info!("Settings parsed successfully");
+            debug!("Debug is set to {}", settings.debug);
+            debug!("Input is set to {:?}", settings.input_file);
+        }
+        Err(message) => {
+            initialize_logging(log::Level::Error);
+            error!("Error parsing settings: {}", message)
+        }
+    }
+}
 
-    println!("Debug is set to {}", settings.debug);
-    println!("Input is set to {:?}", settings.input_file);
+fn initialize_logging(level: log::Level) {
+    stderrlog::new()
+        .verbosity(level)
+        .module(module_path!())
+        .init()
+        .unwrap();
 }
 
 fn display_details() {
@@ -22,23 +43,31 @@ fn display_details() {
     println!("{name} {version}");
 }
 
-fn process_command_line(args: Vec<String>, settings: &mut Settings) {
-    println!("Args received: {:?}", args);
-
+fn process_command_line(args: Vec<String>) -> Result<Settings, &'static str> {
     let mut index = 1;
-    while index < args.len() {
-        println!("  {}", args[index]);
 
-        if args[index] == "-debug" {
+    let mut settings = Settings {
+        debug: false,
+        input_file: None,
+    };
+
+    debug!("Command line arguments:");
+    while index < args.len() {
+        debug!("  {}", args[index]);
+
+        if args[index] == "--debug" || args[index] == "-d" {
             settings.debug = true;
-        }
-        else if args[index] == "-input" {
+        } else if args[index] == "--input" || args[index] == "-i" {
             if index + 1 < args.len() {
                 index += 1;
                 settings.input_file = Some(args[index].to_string());
+            } else {
+                return Err("Missing input filename");
             }
         }
 
         index += 1;
     }
+
+    Ok(settings)
 }
