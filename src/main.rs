@@ -1,6 +1,12 @@
 use log::{debug, error, info};
 use std::env;
 use std::fs::read_to_string;
+use std::io;
+
+enum InputStatus {
+    Continue,
+    Quit
+}
 
 struct Settings {
     log_level: log::Level,
@@ -91,6 +97,22 @@ fn process_command_line(args: Vec<String>) -> Result<Settings, &'static str> {
 fn run_from_stdin() -> Result<(), &'static str> {
     info!("Running from standard input");
 
+    let mut input = String::new();
+    loop {
+        let result = io::stdin().read_line(&mut input);
+        match result {
+            Ok(n) => {
+                if n > 0 {
+                    let outcome = handle_input(&input);
+                    match outcome {
+                        InputStatus::Quit => break,
+                        InputStatus::Continue => ()
+                    }
+                }
+            },
+            Err(_err) => return Err("Failed to read from input")
+        }
+    }
     Ok(())
 }
 
@@ -102,7 +124,11 @@ fn run_from_file(filename: String) -> Result<(), String> {
         Ok(data) => {
             let lines: Vec<String> = data.lines().map(String::from).collect();
             for line in &lines {
-                handle_input(&line);
+                let outcome = handle_input(&line);
+                match outcome {
+                    InputStatus::Quit => break,
+                    InputStatus::Continue => (),
+                } 
             }
             Ok(())
         }
@@ -110,6 +136,12 @@ fn run_from_file(filename: String) -> Result<(), String> {
     }
 }
 
-fn handle_input(input: &String) {
+fn handle_input(input: &String) -> InputStatus {
     debug!("Processing: {input}");
+
+    if input == "quit" {
+        return InputStatus::Quit;
+    }
+
+    return InputStatus::Continue;
 }
