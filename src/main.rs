@@ -105,14 +105,11 @@ fn run_from_file(filename: String) -> Result<(), String> {
                 handle_input(&line);
             }
             Ok(())
-        },
-        Err(err) => {
-            Err( format!("Failed to read input file: {}", err.to_string().as_str()))
         }
+        Err(err) => Err(err.to_string()),
     }
 }
 
 fn handle_input(input: &String) {
     debug!("Processing: {input}");
-    
 }
