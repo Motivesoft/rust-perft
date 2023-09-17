@@ -21,19 +21,20 @@ fn main() {
 
             if settings.input_file != None {
                 let filename = settings.input_file.unwrap();
-                let result = run_from_file( filename.clone() );
+                let result = run_from_file(filename.clone());
                 match result {
                     Ok(_) => info!("Completed"),
-                    Err(message) => error!("Failed to process input file: {:?}: {}", filename, message)
+                    Err(message) => {
+                        error!("Failed to process input file: {:?}: {}", filename, message)
+                    }
                 }
             } else {
                 let result = run_from_stdin();
                 match result {
                     Ok(_) => info!("Complete"),
-                    Err(message) => error!("Error running manual input: {}", message)
+                    Err(message) => error!("Error running manual input: {}", message),
                 }
             }
-
         }
         Err(message) => {
             initialize_logging(log::Level::Info);
@@ -87,30 +88,31 @@ fn process_command_line(args: Vec<String>) -> Result<Settings, &'static str> {
     Ok(settings)
 }
 
-fn run_from_stdin() -> Result<(), &'static str>
-{
+fn run_from_stdin() -> Result<(), &'static str> {
     info!("Running from standard input");
 
     Ok(())
 }
 
-fn run_from_file(filename: String) -> Result<(), &'static str>
-{
+fn run_from_file(filename: String) -> Result<(), String> {
     info!("Running from file: {}", filename);
 
-    let lines = read_lines(&filename);
-
-    // Consumes the iterator, returns an (Optional) String
-    for _line in lines {
+    let result = read_to_string(filename);
+    match result {
+        Ok(data) => {
+            let lines: Vec<String> = data.lines().map(String::from).collect();
+            for line in &lines {
+                handle_input(&line);
+            }
+            Ok(())
+        },
+        Err(err) => {
+            Err( format!("Failed to read input file: {}", err.to_string().as_str()))
+        }
     }
-
-    Ok(())
 }
 
-fn read_lines(filename: &str) -> Vec<String> {
-    read_to_string(filename) 
-        .unwrap()  // panic on possible file-reading errors
-        .lines()  // split the string into an iterator of string slices
-        .map(String::from)  // make each slice into a string
-        .collect()  // gather them together into a vector
+fn handle_input(input: &String) {
+    debug!("Processing: {input}");
+    
 }
