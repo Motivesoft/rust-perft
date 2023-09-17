@@ -97,12 +97,19 @@ fn process_command_line(args: Vec<String>) -> Result<Settings, &'static str> {
 fn run_from_stdin() -> Result<(), &'static str> {
     info!("Running from standard input");
 
-    let mut input = String::new();
     loop {
+        let mut input = String::new();
         let result = io::stdin().read_line(&mut input);
         match result {
-            Ok(n) => {
-                if n > 0 {
+            Ok(_n) => {
+                // trim newline
+                if input.ends_with("\n") {
+                    input.pop();
+                    if input.ends_with("\r") {
+                        input.pop();
+                    }
+                }
+                if input.len() > 0 {
                     let outcome = handle_input(&input);
                     match outcome {
                         InputStatus::Quit => break,
